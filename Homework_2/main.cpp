@@ -209,7 +209,6 @@ void histogram_thread(std::tuple<int, int, float*, std::function<void(int)>> arg
     int my_start = thread_id * data_per_thread;
     int my_end = (thread_id + 1) * data_per_thread;
 
-    auto start = std::chrono::high_resolution_clock::now();
     for (int i = my_start; i < my_end; i++) {
         if (i >= DATA_COUNT) {
             break;
@@ -217,6 +216,7 @@ void histogram_thread(std::tuple<int, int, float*, std::function<void(int)>> arg
         int bin = get_bin_idx(DATA[i], BIN_COUNT);
         my_bin_count[bin]++;
     }
+    auto start = std::chrono::high_resolution_clock::now();
     sum_function(thread_id);
     auto end = std::chrono::high_resolution_clock::now();
     *time = std::chrono::duration<float, std::milli>(end - start).count();
