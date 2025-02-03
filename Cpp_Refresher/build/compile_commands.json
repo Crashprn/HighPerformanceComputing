@@ -1,0 +1,14 @@
+[
+{
+  "directory": "/home/codygrogan/Classes/HighPerformanceComputing/Cpp_Refresher/build",
+  "command": "/usr/lib64/ccache/g++   -g -std=gnu++20 -Wall -Wextra -pedantic -O3 -o CMakeFiles/OOPTest.dir/student.cpp.o -c /home/codygrogan/Classes/HighPerformanceComputing/Cpp_Refresher/student.cpp",
+  "file": "/home/codygrogan/Classes/HighPerformanceComputing/Cpp_Refresher/student.cpp",
+  "output": "CMakeFiles/OOPTest.dir/student.cpp.o"
+},
+{
+  "directory": "/home/codygrogan/Classes/HighPerformanceComputing/Cpp_Refresher/build",
+  "command": "/usr/lib64/ccache/g++   -g -std=gnu++20 -Wall -Wextra -pedantic -O3 -o CMakeFiles/OOPTest.dir/main.cpp.o -c /home/codygrogan/Classes/HighPerformanceComputing/Cpp_Refresher/main.cpp",
+  "file": "/home/codygrogan/Classes/HighPerformanceComputing/Cpp_Refresher/main.cpp",
+  "output": "CMakeFiles/OOPTest.dir/main.cpp.o"
+}
+]

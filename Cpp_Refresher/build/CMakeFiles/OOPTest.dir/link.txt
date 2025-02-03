@@ -1,0 +1,1 @@
+/usr/lib64/ccache/g++ -g CMakeFiles/OOPTest.dir/student.cpp.o CMakeFiles/OOPTest.dir/main.cpp.o -o OOPTest 
