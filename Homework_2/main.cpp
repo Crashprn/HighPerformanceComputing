@@ -189,7 +189,7 @@ void tree_sum(int thread_id)
     }
     auto end = std::chrono::high_resolution_clock::now();
     auto time = std::chrono::duration<float, std::milli>(end - start).count();
-    std::cout << std::format("{:3.2f} ", time);
+    std::cout << std::format("{:3.2f} ", time) << std::endl;
 }
 
 void add_bin_counts(int target, int source)
