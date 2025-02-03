@@ -183,11 +183,11 @@ void tree_sum(int thread_id)
         thread_offset++;
     }
 
+    auto end = std::chrono::high_resolution_clock::now();
     if (thread_id != 0)
     {
         SEMAPHORES[thread_id]->release();
     }
-    auto end = std::chrono::high_resolution_clock::now();
     auto time = std::chrono::duration<float, std::milli>(end - start).count();
     std::cout << "Thread: " << thread_id << " " << std::format("{:3.2f} ", time) << std::endl;
 }
