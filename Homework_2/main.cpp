@@ -114,6 +114,8 @@ int main(int argc, char *argv[]) {
     // Printing the results
     print_result("Tree Structured Sum", times_tree);
 
+    delete[] DATA;
+    delete[] BIN_MAXES;
     
 }
 
