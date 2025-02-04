@@ -168,7 +168,6 @@ void global_sum(int thread_id)
 
 void tree_sum(int thread_id)
 {
-    auto start = std::chrono::high_resolution_clock::now();
     auto current_idx = thread_id;
     auto thread_offset = 0;
     while (current_idx % 2 == 0) {
@@ -176,20 +175,21 @@ void tree_sum(int thread_id)
         if (receive_idx >= NUM_THREADS) {
             break;
         }
+        auto start = std::chrono::high_resolution_clock::now();
         SEMAPHORES[receive_idx]->acquire();
+        auto end = std::chrono::high_resolution_clock::now();
+        
+        std::cout << "Thread: " << thread_id << " " << std::format("{:3.2f} ", std::chrono::duration<float, std::milli>(end - start).count()) << std::endl;
 
         add_bin_counts(thread_id, receive_idx);
         current_idx /= 2;
         thread_offset++;
     }
 
-    auto end = std::chrono::high_resolution_clock::now();
     if (thread_id != 0)
     {
         SEMAPHORES[thread_id]->release();
     }
-    auto time = std::chrono::duration<float, std::milli>(end - start).count();
-    std::cout << "Thread: " << thread_id << " " << std::format("{:3.2f} ", time) << std::endl;
 }
 
 void add_bin_counts(int target, int source)
