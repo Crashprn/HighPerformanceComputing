@@ -161,11 +161,7 @@ void print_result(std::string name, float* times)
         std::cout << std::format("{:4d} ", BIN_COUNTS[0][i]);
     }
     std::cout << std::endl;
-    for (auto i = 0; i < NUM_THREADS; i++) {
-        std::cout << std::format("{:3.2f} ", times[i]);
-    }
-    std::cout << std::endl;
-
+    std::cout << "Thread Max Time: " << *std::max_element(times, times + NUM_THREADS) << std::endl;
 }
 
 void global_sum(int thread_id)
