@@ -163,7 +163,7 @@ void print_result(std::string name, float* times)
 	final_count += BIN_COUNTS[0][i];
     }
     std::cout << std::endl;
-    std::cout << "Bin count matches data: " << (final_count == DATA_COUNT ? "true" : "false") << std::endl;
+    // std::cout << "Bin count matches data: " << (final_count == DATA_COUNT ? "true" : "false") << std::endl;
     std::cout << "Thread Max Time: " << *std::max_element(times, times + NUM_THREADS) << std::endl;
 }
 
