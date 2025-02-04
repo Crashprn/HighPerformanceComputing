@@ -16,7 +16,8 @@ float MAX_MEAS;
 int DATA_COUNT;
 int **BIN_COUNTS;
 float* BIN_MAXES;
-std::vector<std::unique_ptr<std::binary_semaphore>> SEMAPHORES;
+std::vector<std::unique_ptr<std::binary_semaphore>> GLOBAL_SEMAPHORES;
+std::vector<std::unique_ptr<std::binary_semaphore>> TREE_SEMAPHORES;
 
 
 void print_result(std::string name, float* times);
@@ -71,17 +72,20 @@ int main(int argc, char *argv[]) {
 
     int data_per_thread = std::ceil(static_cast<float>(DATA_COUNT) / static_cast<float>(NUM_THREADS));
 
-    // Allocating Semaphores
-    for (int i = 0; i < NUM_THREADS; i++) {
-        SEMAPHORES.emplace_back(std::make_unique<std::binary_semaphore>(0));
-    }
-
+    
+    
+    std::thread threads[NUM_THREADS];
 
     // Global Sum
     float times_global[NUM_THREADS] = {0};
 
+    // Allocating Semaphores
+    for (int i = 0; i < NUM_THREADS; i++) {
+        GLOBAL_SEMAPHORES.emplace_back(std::make_unique<std::binary_semaphore>(0));
+    }
+
+    auto start = std::chrono::high_resolution_clock::now();
     // Creating the threads
-    std::thread threads[NUM_THREADS];
     for (int i = 0; i < NUM_THREADS ; i++) {
         auto args = std::tuple<int, int, float*, std::function<void(int)>>(i, data_per_thread, &times_global[i], global_sum);
         threads[i] = std::thread(histogram_thread, args);
@@ -92,15 +96,24 @@ int main(int argc, char *argv[]) {
         threads[i].join();
     }
 
+    auto end = std::chrono::high_resolution_clock::now();
+    float elapsed = std::chrono::duration<float, std::milli>(end - start).count();
+
     // Printing the results
     print_result("Global Sum", times_global);
+    std::cout << "Elapsed time: " << elapsed << std::endl;
 
     // Tree Sum
 
     reset_bin_counts();
+    // Allocating Semaphores
+    for (int i = 0; i < NUM_THREADS; i++) {
+       TREE_SEMAPHORES.emplace_back(std::make_unique<std::binary_semaphore>(0));
+    }
 
     float times_tree[NUM_THREADS] = {0};
 
+    start = std::chrono::high_resolution_clock::now();
     // Creating the threads
     for (int i = 0; i < NUM_THREADS; i++) {
         auto args = std::tuple<int, int, float*, std::function<void(int)>>(i, data_per_thread, &times_tree[i], tree_sum);
@@ -111,8 +124,14 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < NUM_THREADS; i++) {
         threads[i].join();
     }
+    end = std::chrono::high_resolution_clock::now();
+
+    elapsed = std::chrono::duration<float, std::milli>(end - start).count();
+
+
     // Printing the results
     print_result("Tree Structured Sum", times_tree);
+    std::cout << "Elapsed Time: " << elapsed << std::endl;
 
     delete[] DATA;
     delete[] BIN_MAXES;
@@ -132,7 +151,6 @@ void print_result(std::string name, float* times)
 {
 
     std::cout << name << std::endl;
-    /*
     std::cout << "bin_maxes:  ";
     for (int i = 0; i < BIN_COUNT; i++) {
         std::cout << std::format("{:3.2f} ", BIN_MAXES[i]);
@@ -143,7 +161,6 @@ void print_result(std::string name, float* times)
         std::cout << std::format("{:4d} ", BIN_COUNTS[0][i]);
     }
     std::cout << std::endl;
-    */
     for (auto i = 0; i < NUM_THREADS; i++) {
         std::cout << std::format("{:3.2f} ", times[i]);
     }
@@ -156,39 +173,36 @@ void global_sum(int thread_id)
     if (thread_id == 0) 
     {
         for (int i = 1; i < NUM_THREADS; i++) {
-            SEMAPHORES[i]->acquire();
+            GLOBAL_SEMAPHORES[i]->acquire();
             add_bin_counts(0, i);
         }
     }
     else
     {
-        SEMAPHORES[thread_id]->release();
+        GLOBAL_SEMAPHORES[thread_id]->release();
     }
 }
 
 void tree_sum(int thread_id)
 {
+
     auto current_idx = thread_id;
-    auto thread_offset = 0;
+    auto thread_offset = 1;
     while (current_idx % 2 == 0) {
-        int receive_idx = thread_id + std::pow(2, thread_offset);
+        int receive_idx = thread_id + thread_offset;
         if (receive_idx >= NUM_THREADS) {
             break;
         }
-        auto start = std::chrono::high_resolution_clock::now();
-        SEMAPHORES[receive_idx]->acquire();
-        auto end = std::chrono::high_resolution_clock::now();
-        
-        std::cout << "Thread: " << thread_id << " " << std::format("{:3.2f} ", std::chrono::duration<float, std::milli>(end - start).count()) << std::endl;
+        TREE_SEMAPHORES[receive_idx]->acquire();
 
         add_bin_counts(thread_id, receive_idx);
         current_idx /= 2;
-        thread_offset++;
+        thread_offset *= 2;
     }
 
     if (thread_id != 0)
     {
-        SEMAPHORES[thread_id]->release();
+        TREE_SEMAPHORES[thread_id]->release();
     }
 }
 
@@ -208,6 +222,7 @@ void histogram_thread(std::tuple<int, int, float*, std::function<void(int)>> arg
     int* my_bin_count = BIN_COUNTS[thread_id];
     int my_start = thread_id * data_per_thread;
     int my_end = (thread_id + 1) * data_per_thread;
+    auto start = std::chrono::high_resolution_clock::now();
 
     for (int i = my_start; i < my_end; i++) {
         if (i >= DATA_COUNT) {
@@ -216,7 +231,6 @@ void histogram_thread(std::tuple<int, int, float*, std::function<void(int)>> arg
         int bin = get_bin_idx(DATA[i], BIN_COUNT);
         my_bin_count[bin]++;
     }
-    auto start = std::chrono::high_resolution_clock::now();
     sum_function(thread_id);
     auto end = std::chrono::high_resolution_clock::now();
     *time = std::chrono::duration<float, std::milli>(end - start).count();
