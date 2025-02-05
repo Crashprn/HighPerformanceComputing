@@ -1,0 +1,14 @@
+Discuss the reasons why results might differ for different executions (or number of threads) and what technique did you implemented to solve this problem.
+
+The issue with multiple threads is that there is a race condition for writing the to overall bin count for all of the data.
+Thus each thread must synchronize is some way to prevent the race condition. To prevent this, I used the same idea as the message
+passing example in class using a semaphore for each thread and initializing the count to 0. When a thread wants to indicate its
+bin count is ready for summing it releases (or post) its semaphore indicating its bin count is ready. This method is used in both
+the tree and global sum implementations.
+
+Timings comments
+
+In timing the different summing procedures we overall see strong scaling with the number of threads when run on the Utah CHPC.
+However, the tree sum and global sum does not have a significant impact on the overall time because there is a relatively low
+number of threads. Meaning, that that spreading the summing of the bin counts is not a signifacant portion of time compared to
+sorting the data into the bins.
