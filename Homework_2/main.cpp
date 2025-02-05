@@ -267,7 +267,11 @@ int get_bin_idx(float value, int bin_count)
     while (low <= high) {
         int mid = low + (high - low) / 2;
 
-        if (value < BIN_MAXES[mid])
+        if (BIN_MAXES[mid] == value)
+        {
+            return mid;
+        }
+        else if (value < BIN_MAXES[mid])
         {
             high = mid - 1;
         }
