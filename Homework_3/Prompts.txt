@@ -1,0 +1,18 @@
+
+Question 1. If we try to parallelize the for i loop (the outer loop), which variables should be private and which should be shared?
+
+Answer:
+
+The variables count, i, and j should be private. This is because j dictates the iteration through list to count how many entries are less than the ith.
+And count should be private because it only relates to the ith entry of the list. Meaning that the count for the ith element is unique (thus why is set to
+0 at new values of i).
+
+The list temp should be shared. This is because each element is written to a unique place in temp based on the logic of the sort. Thus, if the sort
+is written correctly, no 2 elements have the same index in temp.
+
+Question 2. If we consider the memcpy implementation not thread-safe, how would you approach parallelizing this operation?
+
+Answer:
+
+If memcpy is not thread safe, the way to parallelize it is typical data paralellism by giving each thread a block of data to copy from temp to a. In this way,
+each index in temp dictates the index in a it should be written to. Making the operation thread safe.
