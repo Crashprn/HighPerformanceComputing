@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
     data_list = new int[list_size];
     for (int i = 0; i < list_size; i++)
     {
-        data_list[i] = rand() % 100;
+        data_list[i] = (rand() % list_size) + 1;
     }
 
     // Print the list before sorting
@@ -41,16 +41,16 @@ int main(int argc, char* argv[])
     print_list(data_list, list_size);
     
     // Sort the list and measure time taken
-    auto start = std::chrono::high_resolution_clock::now();
+    //auto start = std::chrono::high_resolution_clock::now();
     count_sort(data_list, list_size);
-    auto end = std::chrono::high_resolution_clock::now();
+    //auto end = std::chrono::high_resolution_clock::now();
 
     // Print the list after sorting
     std::cout << "sorted: ";
     print_list(data_list, list_size);
 
     // Calculate and print the time taken
-    float elapsed = std::chrono::duration<float, std::milli>(end - start).count();
+    //float elapsed = std::chrono::duration<float, std::milli>(end - start).count();
     //std::cout << "Time taken: " << elapsed << " ms" << std::endl;
 
     // Clean up
