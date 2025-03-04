@@ -1,4 +1,3 @@
-#include <format>
 #include <iostream>
 #include <mpi.h>
 
@@ -31,6 +30,7 @@ int main(int argc, char *argv[])
         if (argc < 5)
         {
             std::cout << "Usage: " << argv[0] << " <bin count> <min meas> <max meas> <data count>" << std::endl;
+            MPI_Finalize();
             return 1;
         }
         // Getting command line arguments
@@ -109,12 +109,15 @@ void create_data(float* data, int dataCount, float minMeas, float maxMeas)
 {
     srand(100); // Seed the random number generator
 
+    // Generate random data and store it in the data array
     for (int i = 0; i < dataCount; i++) {
         data[i] = minMeas + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (maxMeas - minMeas)));
     }
 
 }
 
+// Binary search to find the bin index for a given value
+// Returns the index of the bin that the value belongs to
 int get_bin_idx(float value, int bin_count)
 { 
     int low = 0;
@@ -138,6 +141,7 @@ int get_bin_idx(float value, int bin_count)
     return low;
 }
 
+// Increments the count for the bin that the value belongs to
 void histogram_calc(float* data, int data_count, int* bin_counts)
 {
     for (int i = 0; i < data_count; i++) {
@@ -146,21 +150,24 @@ void histogram_calc(float* data, int data_count, int* bin_counts)
     }
 }
 
+// Print the result of the program
 void print_result(int* bin_counts, float* bin_maxes)
 {   
     std::cout << "bin_maxes:  ";
     for (int i = 0; i < BIN_COUNT; i++) {
-        std::cout << std::format("{:3.3f} ", bin_maxes[i]);
+        std::cout << bin_maxes[i] << " ";
     }
     std::cout << std::endl;
 
     std::cout << "bin_counts: ";
     for (int i = 0; i < BIN_COUNT; i++) {
-        std::cout << std::format("{:4d} ", bin_counts[i]);
+        std::cout << bin_counts[i] << " ";
     }
     std::cout << std::endl;
 }
 
+// Calculates the number of data points for each process and the displ value
+// for each process. Gives all remaining data points to the last process.
 void data_displ_per_rank(int* data_count, int* data_displ, int comm_size, int data_count_total)
 {
     int data_per_process = data_count_total / comm_size;
