@@ -75,14 +75,14 @@ int main(int argc, char *argv[])
         int* displacement = new int[comm_size];
         data_displ_per_rank(count_per_process, displacement, comm_size, DATA_COUNT);
 
-        MPI_Scatterv(data, count_per_process, displacement, MPI_FLOAT, my_data, my_data_count, MPI_DOUBLE, MASTER_RANK, MPI_COMM_WORLD);
+        MPI_Scatterv(data, count_per_process, displacement, MPI_FLOAT, my_data, my_data_count, MPI_FLOAT, MASTER_RANK, MPI_COMM_WORLD);
 
         // Deleting the data array
         delete[] data;
     }
     else
     {
-        MPI_Scatterv(NULL, NULL, NULL, MPI_FLOAT, my_data, my_data_count, MPI_DOUBLE, MASTER_RANK, MPI_COMM_WORLD);
+        MPI_Scatterv(NULL, NULL, NULL, MPI_FLOAT, my_data, my_data_count, MPI_FLOAT, MASTER_RANK, MPI_COMM_WORLD);
     }
 
     
