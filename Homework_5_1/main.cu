@@ -84,8 +84,8 @@ int main()
     cudaMalloc((void**)&d_grey_image, image_width * image_height * sizeof(unsigned char));
     cudaMemcpy(d_grey_image, grey_image, image_width * image_height * sizeof(unsigned char), cudaMemcpyHostToDevice);
 
-    int blocks = 6;
-    int block_sizes[blocks] = {4, 8, 16, 32, 64, 256};
+    int blocks = 4;
+    int block_sizes[blocks] = {4, 8, 16, 32};
 
     
     // Timing variables
@@ -99,7 +99,9 @@ int main()
     {
         // Define grid and block dimensions
         int block_x = block_sizes[i];
-        dim3 DimGrid(ceil(1.0 * image_width / block_x), ceil(1.0*image_height/ block_x), 1);
+        int grid_dim_x = ceil(1.0 * image_width / block_x);
+        int grid_dim_y = ceil(1.0 * image_height / block_x);
+        dim3 DimGrid(grid_dim_x, grid_dim_y, 1);
         dim3 DimBlock(block_x, block_x, 1);
 
         // Start timer
@@ -118,7 +120,7 @@ int main()
         cudaEventSynchronize(stop);
         cudaEventElapsedTime(&elapsedTime, start, stop);
 
-        std::cout << "Elapsed time for " << num_repeats <<  " repetitions with block size " << block_x << " :" << elapsedTime << " ms" << std::endl;
+        std::cout << "Elapsed time for " << num_repeats <<  " repetitions with block size " << block_x << "and grid dimensions " << grid_dim_x << ", " << grid_dim_y <<  " :" << elapsedTime << " ms" << std::endl;
     }
 
     // Copy data back to host and free device memory
