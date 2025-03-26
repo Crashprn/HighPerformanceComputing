@@ -3,6 +3,16 @@
 #include <string>
 #include <cuda.h>
 
+inline cudaError_t checkCuda(cudaError_t result)
+{
+    if (result != cudaSuccess) {
+        fprintf(stderr, "CUDA Runtime Error: %s\n", cudaGetErrorString(result));
+    }
+    return result;
+}
+
+
+
 __global__
 void grey_scale_kernel(unsigned char* greyImage, unsigned char* rgbImage, int image_width, int image_height)
 {
@@ -99,6 +109,8 @@ int main()
         {
             // Launch kernel
             grey_scale_kernel<<<DimGrid, DimBlock>>>(d_grey_image, d_rgb_image, image_width, image_height);
+            checkCuda(cudaGetLastError());
+
         }
 
         // Stop timer

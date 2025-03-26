@@ -1,0 +1,9 @@
+- GTX 1080ti 
+- 2048 threads per multiprocessor
+
+Elapsed time for 200 repetitions with block size 4 :22.8716 ms
+Elapsed time for 200 repetitions with block size 10 :12.4774 ms
+Elapsed time for 200 repetitions with block size 20 :11.2497 ms
+Elapsed time for 200 repetitions with block size 32 :10.9558 ms
+Elapsed time for 200 repetitions with block size 70 :0.04608 ms
+Elapsed time for 200 repetitions with block size 300 :0.045088 ms
