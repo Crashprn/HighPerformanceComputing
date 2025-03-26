@@ -56,7 +56,7 @@ int main()
     int image_height = 1024;
     int image_channels = 3;
     int image_size = image_width * image_height * image_channels;
-    int num_repeats = 600;
+    int num_repeats = 200;
 
     // Read image file
     char* rgb_image = new char[image_size];
