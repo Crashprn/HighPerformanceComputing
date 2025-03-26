@@ -56,6 +56,7 @@ int main()
     int image_height = 1024;
     int image_channels = 3;
     int image_size = image_width * image_height * image_channels;
+    int num_repeats = 600;
 
     // Read image file
     char* rgb_image = new char[image_size];
@@ -73,15 +74,42 @@ int main()
     cudaMalloc((void**)&d_grey_image, image_width * image_height * sizeof(unsigned char));
     cudaMemcpy(d_grey_image, grey_image, image_width * image_height * sizeof(unsigned char), cudaMemcpyHostToDevice);
 
-    // Define grid and block dimensions
-    dim3 DimGrid(ceil(image_width / 16.0), ceil(image_height/ 16.0), 1);
-    dim3 DimBlock(16, 16, 1);
+    int blocks = 6;
+    int block_sizes[blocks] = {4, 8, 16, 32, 64, 256};
 
-    // Launch kernel
-    grey_scale_kernel<<<DimGrid, DimBlock>>>(d_grey_image, d_rgb_image, image_width, image_height);
+    
+    // Timing variables
+    cudaEvent_t start, stop;
+    float elapsedTime;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
 
-    // Copy data back to host
-    cudaDeviceSynchronize();
+
+    for (int i = 0; i < blocks; i++)
+    {
+        // Define grid and block dimensions
+        int block_x = block_sizes[i];
+        dim3 DimGrid(ceil(1.0 * image_width / block_x), ceil(1.0*image_height/ block_x), 1);
+        dim3 DimBlock(block_x, block_x, 1);
+
+        // Start timer
+        cudaEventRecord(start, 0);
+
+        for (int j = 0; j < num_repeats; j++)
+        {
+            // Launch kernel
+            grey_scale_kernel<<<DimGrid, DimBlock>>>(d_grey_image, d_rgb_image, image_width, image_height);
+        }
+
+        // Stop timer
+        cudaEventRecord(stop, 0);
+        cudaEventSynchronize(stop);
+        cudaEventElapsedTime(&elapsedTime, start, stop);
+
+        std::cout << "Elapsed time for " << num_repeats <<  " repetitions with block size " << block_x << " :" << elapsedTime << " ms" << std::endl;
+    }
+
+    // Copy data back to host and free device memory
     cudaMemcpy(grey_image, d_grey_image, image_width * image_height * sizeof(unsigned char), cudaMemcpyDeviceToHost);
     cudaFree(d_rgb_image);
     cudaFree(d_grey_image);
