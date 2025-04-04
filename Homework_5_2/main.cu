@@ -204,12 +204,22 @@ int main()
 
     // Printing timings and bandwidths
     std::cout << "Elapsed time for regular transpose: " << elapsed_time_reg << " ms" << std::endl;
-    std::cout << "Bandwidth: " << bandwidth_reg << std::endl;
+    std::cout << "Bandwidth: " << bandwidth_reg << " Gb/s" << std::endl;
     std::cout << "Elapsed time for tiled transpose: " << elapsed_time_tile << " ms" << std::endl;
-    std::cout << "Bandwidth: " << bandwidth_tile << std::endl;
+    std::cout << "Bandwidth: " << bandwidth_tile << " Gb/s" << std::endl;
 
     // Write images to file
     write_image_file("transposed_image_cpu.raw", transposed_image_cpu, image_size);
     write_image_file("transposed_image_gpu_reg.raw", transposed_image_gpu_reg, image_size);
     write_image_file("transposed_image_gpu_tile.raw", transposed_image_gpu_tile, image_size);
 }
+
+///////////// CHPC RESULTS //////////////
+/*
+Images are equal regular: 1
+Images are equal tiled: 1
+Elapsed time for regular transpose: 0.250688 ms
+Bandwidth: 25.0968
+Elapsed time for tiled transpose: 0.062464 ms
+Bandwidth: 100.721
+*/
