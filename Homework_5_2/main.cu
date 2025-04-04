@@ -10,14 +10,18 @@
 __global__
 void transpose_image_reg(unsigned char* d_image, unsigned char* d_transposed_image, int width, int height, int channels)
 {
+    // Calculate the global row and column indices
     int col = blockIdx.x * blockDim.x + threadIdx.x;
     int row = blockIdx.y * blockDim.y + threadIdx.y;
 
+    // Bounds check
     if (row < height && col < width)
     {
+        // Calculate linearized regular and transposed indices
         int t_index = col * height + row;
         int r_index = row * width + col;
 
+        // Copy each channel from the original image to the transposed image
         for (int k = 0; k < channels; k++)
         {
             d_transposed_image[t_index * channels + k] = d_image[r_index * channels + k];
@@ -25,6 +29,7 @@ void transpose_image_reg(unsigned char* d_image, unsigned char* d_transposed_ima
     }
 }
 
+// Shared Memory Transpose using Tiling
 __global__
 void transpose_image_tile(unsigned char* d_image, unsigned char* d_transposed_image, int width, int height, int channels)
 {
@@ -34,6 +39,7 @@ void transpose_image_tile(unsigned char* d_image, unsigned char* d_transposed_im
     int col = blockIdx.x * TILE_WIDTH + threadIdx.x;
     int row = blockIdx.y * TILE_WIDTH + threadIdx.y;
 
+    // Check if thread is in-bounds in the original image
     if (row < height && col < width)
     {
 
@@ -43,24 +49,34 @@ void transpose_image_tile(unsigned char* d_image, unsigned char* d_transposed_im
         {
             tile[threadIdx.x][threadIdx.y][k] = d_image[r_index * channels + k];
         }
+    }
 
-        __syncthreads(); // Ensure all threads have loaded their data
+    __syncthreads(); // Ensure all threads have loaded their data
 
-        // Write transposed data to global memory
-        int t_col = blockIdx.y * TILE_WIDTH + threadIdx.x; // Transposed column index
-        int t_row = blockIdx.x * TILE_WIDTH + threadIdx.y; // Transposed row index
-        int index_transposed = t_row * height + t_col;
+    // Define transposed indices
+    int t_col = blockIdx.y * TILE_WIDTH + threadIdx.x; 
+    int t_row = blockIdx.x * TILE_WIDTH + threadIdx.y; 
 
+    // Transposed matrix is width x height
+    // Since writing is done contiguously, we need to check bounds
+    // again for the transposed indices to avoid out-of-bounds access
+    if (t_row < width && t_col < height)
+    {
+        int t_index = t_row * height + t_col;
+
+        // Write from shared memory to global memory in a contiguous manner
+        // Since tile is populated in [threadIdx.x][threadIdx.y], we need to swap the indices
+        // and write in [threadIdx.y][threadIdx.x] order
         for (int k = 0; k < channels; k++)
         {
-            d_transposed_image[index_transposed * channels + k] = tile[threadIdx.y][threadIdx.x][k];
+            d_transposed_image[t_index * channels + k] = tile[threadIdx.y][threadIdx.x][k];
         }
     }
 
 }
 
 __host__
-void transpose_image_h(char* image, char* transposed_image, int width, int height, int channels)
+void transpose_image_cpu(char* image, char* transposed_image, int width, int height, int channels)
 {
     for (int i = 0; i < width; i++)
     {
@@ -174,7 +190,7 @@ int main()
     cudaMemcpy(transposed_image_gpu_tile, d_transposed_image_tile, image_size* sizeof(char), cudaMemcpyDeviceToHost);
 
     // CPU transpose
-    transpose_image_h(rgb_image, transposed_image_cpu, image_width, image_height, image_channels);
+    transpose_image_cpu(rgb_image, transposed_image_cpu, image_width, image_height, image_channels);
 
     // Compare images
     std::cout << "Images are equal regular: " << compare_images(transposed_image_cpu, transposed_image_gpu_reg, image_size) << std::endl;
@@ -183,10 +199,10 @@ int main()
     // Calculating bandwidth
     int total_bytes = (image_size * 2); // Total bytes transferred (input + output)
     float total_Gbytes = total_bytes / pow(10.0, 9.0); // Convert bytes to Gbytes
-
     float bandwidth_reg = total_Gbytes / (elapsed_time_reg / 1000.0); // Gbytes per second
     float bandwidth_tile = total_Gbytes / (elapsed_time_tile / 1000.0); // Gbytes per second
 
+    // Printing timings and bandwidths
     std::cout << "Elapsed time for regular transpose: " << elapsed_time_reg << " ms" << std::endl;
     std::cout << "Bandwidth: " << bandwidth_reg << std::endl;
     std::cout << "Elapsed time for tiled transpose: " << elapsed_time_tile << " ms" << std::endl;
