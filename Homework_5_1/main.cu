@@ -11,8 +11,6 @@ inline cudaError_t checkCuda(cudaError_t result)
     return result;
 }
 
-
-
 __global__
 void grey_scale_kernel(unsigned char* greyImage, unsigned char* rgbImage, int image_width, int image_height)
 {
@@ -120,7 +118,7 @@ int main()
         cudaEventSynchronize(stop);
         cudaEventElapsedTime(&elapsedTime, start, stop);
 
-        std::cout << "Elapsed time for " << num_repeats <<  " repetitions with block size " << block_x << "and grid dimensions " << grid_dim_x << ", " << grid_dim_y <<  " :" << elapsedTime << " ms" << std::endl;
+        std::cout << "Elapsed time for " << num_repeats <<  " repetitions with block size " << block_x << " and grid dimensions " << grid_dim_x << ", " << grid_dim_y <<  ": " << elapsedTime << " ms" << std::endl;
     }
 
     // Copy data back to host and free device memory
@@ -129,5 +127,5 @@ int main()
     cudaFree(d_grey_image);
 
     // Write grey image file
-    write_image_file("gc_conv_1024x1024_grey.raw", grey_image, image_width * image_height);
+    write_image_file("gc.raw", grey_image, image_width * image_height);
 }

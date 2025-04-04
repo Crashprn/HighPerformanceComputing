@@ -1,0 +1,102 @@
+STUDY:
+
+Device Info:
+
+CUDA Device Query (Runtime API) version (CUDART static linking)
+
+Detected 1 CUDA Capable device(s)
+
+Device 0: "NVIDIA GeForce GTX 1080 Ti"
+  CUDA Driver Version / Runtime Version          12.8 / 11.1
+  CUDA Capability Major/Minor version number:    6.1
+  Total amount of global memory:                 11165 MBytes (11707809792 bytes)
+  (028) Multiprocessors, (128) CUDA Cores/MP:    3584 CUDA Cores
+  GPU Max Clock rate:                            1582 MHz (1.58 GHz)
+  Memory Clock rate:                             5505 Mhz
+  Memory Bus Width:                              352-bit
+  L2 Cache Size:                                 2883584 bytes
+  Maximum Texture Dimension Size (x,y,z)         1D=(131072), 2D=(131072, 65536), 3D=(16384, 16384, 16384)
+  Maximum Layered 1D Texture Size, (num) layers  1D=(32768), 2048 layers
+  Maximum Layered 2D Texture Size, (num) layers  2D=(32768, 32768), 2048 layers
+  Total amount of constant memory:               65536 bytes
+  Total amount of shared memory per block:       49152 bytes
+  Total shared memory per multiprocessor:        98304 bytes
+  Total number of registers available per block: 65536
+  Warp size:                                     32
+  Maximum number of threads per multiprocessor:  2048
+  Maximum number of threads per block:           1024
+  Max dimension size of a thread block (x,y,z): (1024, 1024, 64)
+  Max dimension size of a grid size    (x,y,z): (2147483647, 65535, 65535)
+  Maximum memory pitch:                          2147483647 bytes
+  Texture alignment:                             512 bytes
+  Concurrent copy and kernel execution:          Yes with 2 copy engine(s)
+  Run time limit on kernels:                     No
+  Integrated GPU sharing Host Memory:            No
+  Support host page-locked memory mapping:       Yes
+  Alignment requirement for Surfaces:            Yes
+  Device has ECC support:                        Disabled
+  Device supports Unified Addressing (UVA):      Yes
+  Device supports Managed Memory:                Yes
+  Device supports Compute Preemption:            Yes
+  Supports Cooperative Kernel Launch:            Yes
+  Supports MultiDevice Co-op Kernel Launch:      Yes
+  Device PCI Domain ID / Bus ID / location ID:   0 / 193 / 0
+  Compute Mode:
+     < Default (multiple host threads can use ::cudaSetDevice() with device simultaneously) >
+
+deviceQuery, CUDA Driver = CUDART, CUDA Driver Version = 12.8, CUDA Runtime Version = 11.1, NumDevs = 1
+Result = PASS
+
+- Max threads per SM is 2048
+- Assuming Max Blocks per SM is 8
+- Number of multiprocessors is 28
+
+Analytical examination of block sizes:
+All of these block sizes benefit from dividing the 1024x1024 image evenly with no thread not computing a grey scale value.
+
+Block Size: 4x4
+- Slow because each block is executed in 32 thread warps. If a block is 4x4=16 threads then 
+a warp is not using half its possible threads when executing a block. Thus execution should
+take twice as long.
+
+Block Size: 8x8
+- This block size is better because 8x8 = 64 threads or 2 full warps per block maximizing warp utilization.
+- Assuming the gpu has max 8 thread blocks per SM then the max number of threads scheduled to a SM is 512.
+  Meaning there is a lot of wasted time scheduling compute per SM because it is not utilizing 1512 threads per schedule.
+
+Block Size: 16x16
+- This block size should be the best for the assumption of a maximum of 8 blocks per SM because 
+  2048/(16x16) = 8. Thus it is utilizing all of the threads available to a SM per scheduling.
+
+Block Size: 32x32
+- This block size should have the similar performance as the previous because each SM can have 
+  2048/(32x32) = 2 blocks per scheduling utilizing all 2048 threads. However there will be a slight
+  load distribution difference. For the 16x16 case, the grid is 4096 blocks so after evenly
+  distributing 8 block batches to each SM evenly there are 4096 - floor(4096/(8*28))*8*28 = 64 blocks
+  left to compute (of which 56 can be spread evenly with 8 blocks remaining). For the 32x32 case, the
+  grid is 1024 blocks and thus there are 1024 - floor(1024/(2*28))*2*28 = 16 blocks left to compute.
+  This leads to the 32x32 version being less efficient because it has idle SMs for 1024 threads of
+  work, whereas the 16x16 version has idle SMs for 256 threads of work.
+
+Experimental examination of block sizes:
+
+Block Size: 4x4
+- Elapsed time for 200 repetitions with block size 4 and grid dimensions 256, 256: 22.7892 ms
+
+Block Size: 8x8
+- Elapsed time for 200 repetitions with block size 8 and grid dimensions 128, 128: 9.85907 ms
+
+Block Size: 16x16:
+- Elapsed time for 200 repetitions with block size 16 and grid dimensions 64, 64: 9.91533 ms
+
+Block Size: 32x32
+- Elapsed time for 200 repetitions with block size 32 and grid dimensions 32, 32: 10.9568 ms
+
+
+Discussion:
+- We see slightly different results than predicted because the 1080 Ti has the Pascal architecture
+  and thus max 32 blocks per SM. So the 8x8 block size is optimal because it can have 64x32 = 2048 threads
+  per scheduled batch. Additionally, in a similar vein as the analytical analysis between 16x16 and 32x32,
+  the 8x8 block size has even better load distribution because there are 16384 - floor(16384 / (28*32)) = 256
+  blocks left (of which 252 can be spread evenly with 4 blocks remaining). Leading the 8x8 block size to have
+  SMs idle for only 64 threads of work and explaining its optimality.
